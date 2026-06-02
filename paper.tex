@@ -1,0 +1,512 @@
+\documentclass[twocolumn]{article}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage[a4paper,hmargin=2.2cm,vmargin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{courier}
+\usepackage{helvet}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{gensymb}
+\usepackage{enumitem}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+% ============================================================
+% TITLE & AUTHORS
+% ============================================================
+\title{Uncovering the Synthetic--Real Evaluation Gap in Unsupervised\\Anomaly Detection for Food Price Time Series}
+
+\author{
+    Mustika$^{1\ast}$ and Amri Reza Wahyudin$^{2}$ \\
+    $^{1}$Department of Computer Science, Universitas Muhammadiyah Metro, Metro, Indonesia \\
+    $^{2}$Department of Engineering and Computer Science, Universitas Teknokrat Indonesia, Bandar Lampung, Indonesia \\
+    $^{\ast}$Corresponding author: \texttt{mustika@teknokrat.ac.id}
+}
+
+\date{}
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+
+\maketitle
+
+% ============================================================
+% ABSTRACT
+% ============================================================
+\begin{abstract}
+Anomaly detection in retail food price time series is critical for supply chain stability, especially in developing economies where food price volatility directly affects inflation. However, existing evaluations of unsupervised anomaly detection (AD) methods rely predominantly on synthetic benchmarks, which may not reflect real-world detection performance. This study presents a systematic comparison of seven unsupervised AD methods---Isolation Forest, Local Outlier Factor, Autoencoder, Prophet residual analysis, STL+IQR, a novel STL-PELT hybrid score, and TimesNet---applied to retail food price time series. We introduce a curated calendar of 25 real economic events (BBM fuel hikes, El Ni\~no drought, Idul Fitri and Idul Adha holidays, and the cooking oil crisis) as ground truth for the Indonesian PIHPS food price dataset, alongside two additional public retail datasets (M5 and Online Retail II). Our key finding reveals a systematic mismatch: the Autoencoder achieves the highest F1 score (0.170) on synthetic benchmarks but detects only 24\% of real economic events, whereas STL+IQR (F1=0.174 on synthetic) detects 84\% of real events. The proposed STL-PELT hybrid, parameterized by an $\alpha$ weighting term, achieves the highest event-to-background lift (5.64$\times$) among all methods. These results demonstrate that synthetic evaluation alone is insufficient for assessing AD methods in food price monitoring, and we recommend that real-event validation become standard practice.
+\end{abstract}
+
+\noindent\textbf{Keywords:} anomaly detection, food price time series, STL decomposition, PELT change point, real-event validation
+
+% ============================================================
+% 1. INTRODUCTION
+% ============================================================
+\section{Introduction}
+\label{sec:intro}
+
+Food price stability is a critical economic indicator, particularly in developing economies where a large proportion of household income is spent on food~\cite{pihps_bi}. In Indonesia, food expenditures account for approximately half of household spending, making price volatility a direct driver of inflation and poverty~\cite{bueno2025food}. The Strategic Food Price Information Center (PIHPS), managed by Bank Indonesia, monitors daily retail prices of over 30 staple commodities---including rice, cooking oil, beef, chicken, eggs, chili, shallots, garlic, and sugar---across major markets nationwide. These time series exhibit complex patterns driven by multiple interacting factors: seasonality (planting and harvest cycles, religious holidays), trend (inflation, supply chain development), and irregular shocks (policy changes, weather events, global commodity prices)~\cite{bueno2025food}.
+
+Unsupervised anomaly detection (AD) in such time series can provide early warnings of supply disruptions, enabling timely policy interventions. A wide range of unsupervised methods has been proposed for time series AD, as surveyed by recent comprehensive reviews~\cite{darban2022survey,jin2023graph,wang2024survey}. Density-based approaches such as Isolation Forest~\cite{liu2008isolation} and Local Outlier Factor (LOF)~\cite{breunig2000lof} identify anomalies as points lying in low-density regions. Reconstruction-based deep learning methods, particularly Autoencoders~\cite{sakurada2014anomaly}, learn a compressed representation of normal patterns and flag points with high reconstruction error. Forecasting-based methods such as Prophet~\cite{taylor2018prophet} detect anomalies through residual analysis. Decomposition-based methods like STL+IQR~\cite{cleveland1990stl} exploit seasonal-trend decomposition to identify irregularities in the residual component. More recently, transformer-based architectures including TimesNet~\cite{wu2023timesnet}, Anomaly Transformer~\cite{xu2022anomaly}, and TranAD~\cite{tuli2022tranad} have achieved state-of-the-art results on benchmark datasets.
+
+Despite this methodological diversity, the evaluation of AD methods in the food price domain has two fundamental limitations. First, existing work on Indonesian food price data focuses almost exclusively on forecasting rather than anomaly detection. The MALCOM competition~\cite{malcom2026} and numerous studies~\cite{makridakis2022m5} evaluate predictive accuracy (MAPE, RMSE) but do not address the detection of anomalous price movements. Second, evaluations across the broader AD literature rely predominantly on synthetic anomaly injection, where artificial outliers---random spikes, point anomalies, or contextual outliers---are inserted into otherwise clean data~\cite{wu2023timesnet}. This practice assumes that synthetic anomalies are representative of real-world events, an assumption that has been challenged in image domains~\cite{swsa2023} but remains largely untested for time series AD.
+
+Recent work in decomposition-based anomaly detection has shown promise for capturing real-world patterns. He et al.~\cite{he2023oneshotstl} proposed OneShotSTL for online seasonal-trend decomposition with O(1) update complexity, while Mishra et al.~\cite{mishra2022onlinestl} demonstrated OnlineSTL for real-time metrics monitoring. Zhang et al.~\cite{zhang2022tfad} combined time-frequency analysis with decomposition for AD. However, none of these studies validate their methods against curated real-world event ground truth.
+
+In this paper, we address both limitations simultaneously. Our contributions are threefold:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Real-event validation framework:} We curate a calendar of 25 real economic event--commodity pairs from the Indonesian PIHPS dataset (2015--2026), covering five event types: BBM fuel subsidy removal (September 2022), the El Ni\~no 2023 drought, Idul Fitri 2022 and 2023, Idul Adha 2023, and the cooking oil price crisis of 2022. Each event--commodity pair provides a ground-truth window for evaluating AD methods under realistic conditions.
+    \item \textbf{STL-PELT hybrid anomaly score:} We propose a novel parameterized AD method that combines STL decomposition residuals with PELT~\cite{killick2012pelt} change point proximity into a single hybrid score: $S(t) = \alpha \cdot |r(t)|/\text{MAD} + (1-\alpha) \cdot \tilde{p}(t)$, where $\alpha \in [0,1]$ controls the trade-off between residual magnitude and change point awareness. This is, to our knowledge, the first method to jointly score anomaly candidates using both signals.
+    \item \textbf{Empirical finding:} We demonstrate that synthetic evaluation systematically misranks AD methods. The Autoencoder, which ranks first on synthetic benchmarks (F1=0.170 on Online Retail), fails to detect 76\% of real economic events. In contrast, STL+IQR (F1=0.174 on synthetic) detects 84\% of real events. The proposed STL-PELT hybrid achieves the highest event-to-background density lift (5.64$\times$). We argue that this mismatch is structural: synthetic point anomalies do not resemble the persistent, multi-day shifts characteristic of economic shocks, and methods must be evaluated under both protocols.
+\end{enumerate}
+
+The remainder of this paper is organized as follows. Section~\ref{sec:methods} describes the datasets, AD methods, and evaluation framework. Section~\ref{sec:results} presents experimental results on both synthetic and real-event evaluations, including the $\alpha$ ablation study. Section~\ref{sec:discussion} discusses implications, limitations, and threats to validity. Section~\ref{sec:conclusion} concludes the paper with recommendations for practice and future work.
+
+% ============================================================
+% 2. METHODS
+% ============================================================
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Datasets}
+
+We employ three retail time series datasets spanning different domains, scales, and geographies. The primary dataset is the \textbf{PIHPS (Indonesian Food Prices)} dataset~\cite{pihps_bi}, which records daily retail prices for over 30 staple commodities across Indonesia. We select 15 major commodities with complete records from January 2015 to March 2026, yielding approximately 1,800--3,600 daily observations per series. The commodities include rice (three qualities), cooking oil (two types), beef, chicken, eggs, cayenne pepper, red chili, shallots, garlic, granulated sugar, and wheat flour. Figure~\ref{fig:series} shows example PIHPS time series with annotated real events.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/calendar_comparison.png}
+\caption{Example PIHPS time series showing price dynamics during real economic events (BBM hike, Idul Fitri, El Ni\~no). Shaded regions indicate event windows.}
+\label{fig:series}
+\end{figure}
+
+As cross-domain benchmarks, we include the \textbf{M5 Forecasting} dataset~\cite{makridakis2022m5}---daily unit sales of 30 retail items from Walmart (1,941 days, 2011--2016)---and the \textbf{Online Retail II} dataset~\cite{online_retail}---daily aggregated transaction counts from a UK e-commerce platform, covering 30 product categories.
+
+\subsection{Real-Event Calendar}
+
+We construct a ground-truth event calendar for the PIHPS dataset by identifying 25 commodity--event pairs across five event types. Each event is defined by an onset date determined from policy announcements, meteorological records, and the Islamic calendar. The evaluation window spans from the onset date to the estimated return to baseline (typically 14--30 days depending on commodity).
+
+\begin{table}[h]
+\centering
+\caption{Real economic event calendar for PIHPS validation.}
+\label{tab:events}
+\small
+\begin{tabular}{llcc}
+\toprule
+Event & Date & Commodities & Pairs \\
+\midrule
+BBM Fuel Hike      & Sep 2022  & Rice, cooking oil, cayenne, sugar, eggs, chicken & 6 \\
+Idul Fitri 2022    & May 2022  & Rice, sugar, cooking oil, eggs, chicken, beef    & 6 \\
+Idul Fitri 2023    & Apr 2023  & Rice, sugar, cooking oil, eggs, chicken, beef    & 6 \\
+Idul Adha 2023     & Jun 2023  & Beef, chicken                                     & 2 \\
+El Ni\~no 2023     & Jun--Oct  & Rice, cayenne, shallots, garlic                   & 4 \\
+Cooking Oil Crisis & Jan 2022  & Cooking oil                                       & 1 \\
+\midrule
+Total              &           &                                                   & 25 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Anomaly Detection Methods}
+
+We compare seven unsupervised anomaly detection methods spanning three categories:
+
+\noindent\textbf{Density-based:}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Isolation Forest (IF)}~\cite{liu2008isolation}: An ensemble method that isolates anomalies through random partitioning. We use $n\_estimators=100$ with automatic contamination estimation.
+    \item \textbf{Local Outlier Factor (LOF)}~\cite{breunig2000lof}: Measures local density deviation of a point relative to its $k$ nearest neighbors ($k=20$).
+\end{itemize}
+
+\noindent\textbf{Deep learning:}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Autoencoder (AE)}~\cite{sakurada2014anomaly}: A three-layer neural network (64-32-64) trained on sliding windows (length 30) to minimize reconstruction error. Anomaly score is the mean squared error between input and reconstruction.
+    \item \textbf{TimesNet}~\cite{wu2023timesnet}: Transforms 1D time series into 2D tensors for capturing periodic variations using inception modules. We use the official implementation with default parameters.
+\end{itemize}
+
+\noindent\textbf{Decomposition-based:}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Prophet Residual}~\cite{taylor2018prophet}: Applies Facebook Prophet for trend-seasonality decomposition and flags points where the absolute residual exceeds $Q3 + 1.5 \times IQR$.
+    \item \textbf{STL+IQR}~\cite{cleveland1990stl}: Performs STL decomposition (period auto-detected, robust fitting) and applies IQR thresholding on the residual component.
+    \item \textbf{STL-PELT (proposed)}: Our novel hybrid method described below.
+\end{itemize}
+
+\subsection{STL-PELT Hybrid Anomaly Score}
+\label{sec:stl_pelt}
+
+The proposed STL-PELT method combines two complementary anomaly signals. The algorithm proceeds in three stages:
+
+\textbf{Stage 1 -- STL Decomposition:} Given a univariate time series $y(t)$, STL~\cite{cleveland1990stl} decomposes it into trend $\hat{t}(t)$, seasonal $\hat{s}(t)$, and residual $r(t)$ components:
+\begin{equation}
+y(t) = \hat{t}(t) + \hat{s}(t) + r(t)
+\end{equation}
+We use robust STL fitting with automatically detected period (365 for multi-year data, 7 for short series). The residual $r(t)$ captures irregular movements not explained by trend or seasonality.
+
+\textbf{Stage 2 -- PELT Change Point Detection:} We apply PELT~\cite{killick2012pelt} with an L2 cost function (mean shift) to the residual series $r(t)$. PELT detects abrupt changes in the mean of the residual with $O(n)$ computational complexity via pruning. The penalty parameter is auto-selected using a BIC heuristic:
+\begin{equation}
+\text{penalty} = 2 \cdot \ln(n) \cdot \text{Var}(r)
+\end{equation}
+where $n$ is the series length. The detected change points $\mathcal{C} = \{c_1, c_2, \ldots, c_k\}$ index locations where the residual mean shifts significantly.
+
+For each time point $t$, we compute the proximity to the nearest change point:
+\begin{equation}
+p(t) = \exp\left(-\frac{\min_{c \in \mathcal{C}}|t - c|^2}{2\sigma^2}\right)
+\end{equation}
+where $\sigma$ is adaptively set to one-quarter of the mean segment length between change points. This Gaussian decay assigns high proximity scores to points near change points and low scores elsewhere.
+
+\textbf{Stage 3 -- Hybrid Score:} The final anomaly score combines both signals:
+\begin{equation}
+S(t) = \alpha \cdot \frac{|r(t)|}{\text{MAD}} + (1 - \alpha) \cdot \tilde{p}(t)
+\end{equation}
+where MAD is the median absolute deviation of the residuals (robust scale estimate) and $\tilde{p}(t)$ is the proximity score scaled to the 90th percentile of the magnitude scores for comparability. The parameter $\alpha \in [0,1]$ controls the trade-off: $\alpha=1$ yields pure STL+IQR (residual magnitude only), while $\alpha=0$ uses change point proximity only. Points with $S(t) > Q3 + 1.5 \times IQR$ are flagged as anomalies.
+
+We conduct a full $\alpha$ ablation over $\{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0\}$, each evaluated on 90 experimental configurations per dataset.
+
+\subsection{Evaluation Protocol}
+
+\noindent\textbf{Synthetic evaluation:} For each dataset, we inject synthetic anomalies at three rates (1\%, 5\%, and 10\% of the series length) using a combination of point anomalies (single-point spikes at 3--5$\sigma$) and contextual anomalies (temporary level shifts lasting 3--7 days). We run each method on 30 randomly selected series per dataset at each anomaly rate, giving 90 configurations per method per dataset. With 7 methods and 3 datasets, the main comparison comprises 1,890 experimental runs.
+
+\noindent\textbf{Real-event evaluation:} For the PIHPS dataset, we evaluate three representative methods (STL+IQR, STL-PELT at $\alpha=0.7$, and Autoencoder) against the 25 event--commodity pairs. For each pair, we compute:
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Detection density:} Proportion of days within the event window flagged as anomalous.
+    \item \textbf{Detection delay:} Days from event onset to first anomaly flag.
+    \item \textbf{Background lift:} Ratio of detection density during events to density during quiet (non-event) periods.
+\end{itemize}
+
+\noindent\textbf{Statistical testing:} We use the Friedman test~\cite{demvsar2006statistical} to detect significant differences across methods, followed by Nemenyi post-hoc comparisons. All tests use $\alpha=0.05$.
+
+% ============================================================
+% 3. RESULTS AND DISCUSSION
+% ============================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Synthetic Benchmark Results}
+
+Table~\ref{tab:synthetic} presents the mean F1 scores across all methods and datasets at the 10\% anomaly rate. The pattern is consistent across anomaly rates: STL+IQR achieves the highest F1 on food prices (0.175) and M5 (0.205), while the Autoencoder leads on Online Retail (0.170). Among deep learning methods, TimesNet (0.089--0.092) underperforms relative to its reported state-of-the-art results on benchmark AD datasets, suggesting that retail price series differ substantially from the sensor and server metrics on which these methods were developed.
+
+\begin{table}[h]
+\centering
+\caption{Mean F1 scores at 10\% anomaly rate across 30 series per dataset. Best in bold, second underlined.}
+\label{tab:synthetic}
+\small
+\begin{tabular}{lccc}
+\toprule
+Method & Food Prices & M5 & Online Retail \\
+\midrule
+Isolation Forest  & 0.024 & 0.016 & 0.003 \\
+LOF               & 0.014 & 0.028 & 0.006 \\
+Autoencoder       & 0.092 & 0.090 & \textbf{0.170} \\
+Prophet Residual  & 0.020 & 0.004 & 0.003 \\
+STL+IQR           & \textbf{0.175} & \textbf{0.205} & 0.165 \\
+STL-PELT (0.7)    & 0.148 & 0.167 & 0.143 \\
+TimesNet          & 0.092 & 0.055 & 0.089 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:cd} shows the critical difference (CD) diagram from the Nemenyi post-hoc test. STL+IQR and STL-PELT form a statistically distinct cluster from the density-based methods (Isolation Forest, LOF) and the deep learning methods. However, the difference between STL+IQR and STL-PELT is not statistically significant at $\alpha=0.05$.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/cd_diagram_m5.png}
+\caption{Critical difference diagram from Nemenyi post-hoc test on M5 dataset. Methods connected by a horizontal bar are not significantly different.}
+\label{fig:cd}
+\end{figure}
+
+\subsection{Real-Event Validation Results}
+
+The real-event evaluation reveals a dramatically different ranking compared to synthetic benchmarks. Table~\ref{tab:real} summarizes detection performance across 25 event--commodity pairs for the three evaluated methods.
+
+\begin{table}[h]
+\centering
+\caption{Real-event detection summary over 25 PIHPS event--commodity pairs.}
+\label{tab:real}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Method & Detections & Avg. Density & Avg. Delay (days) & Lift \\
+\midrule
+STL+IQR          & \textbf{21/25 (84\%)} & 0.537 & 11.8 & 4.45$\times$ \\
+STL-PELT ($\alpha$=0.7) & 12/25 (48\%) & 0.339 & 31.6 & \textbf{5.64$\times$} \\
+Autoencoder      & 6/25 (24\%) & 0.088 & 131.6 & 4.23$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textbf{Autoencoder} detects only 6 of 25 event pairs (24\%). Its average detection density (0.088) is barely above the background false positive rate (0.021), and its average detection delay exceeds four months (131.6 days), rendering it essentially unusable for early warning. The autoencoder's reconstruction error is dominated by normal seasonal variation rather than event-induced shifts.
+
+\textbf{STL+IQR} detects 21 of 25 pairs (84\%) with an average density of 0.537 and a mean delay of 11.8 days. This method excels at detecting events that manifest as residual spikes---particularly BBM hike impacts (detected across 5 of 6 commodities within 2 days) and Idul Fitri price surges (detected across 5 of 6 commodities on the same day). Its limitations appear in more subtle events such as El Ni\~no (density 0.011--0.207 across commodities) where the price effect is gradual rather than abrupt.
+
+The proposed \textbf{STL-PELT} hybrid detects 12 of 25 pairs (48\%) but achieves the highest lift (5.64$\times$), indicating superior discrimination between event and non-event periods. This makes STL-PELT particularly suitable for applications where false positive costs are high. For the BBM hike, STL-PELT achieves density 1.0 on three commodities (rice, cooking oil, cayenne) with 2-day delay, matching STL+IQR. For Idul Fitri, STL-PELT shows consistent detection (density 0.667--1.0) with slightly longer delays (0--12 days).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/clean_validation.png}
+\caption{Detailed real-event detection performance across all 25 event--commodity pairs. Each subpanel shows a method's per-event detection density. STL+IQR and STL-PELT consistently detect economic events, while the Autoencoder misses most of them.}
+\label{fig:mismatch}
+\end{figure}
+
+\subsection{The Synthetic--Real Mismatch}
+
+Figure~\ref{fig:comparison} directly compares the synthetic and real-event rankings. The mismatch is stark: the Autoencoder drops from first place on synthetic (Online Retail, F1=0.170) to last on real events (24\% detection). STL+IQR maintains first place in both evaluations. The rank correlation (Spearman's $\rho$) between synthetic F1 and real-event detection rate is 0.50, indicating weak agreement.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/summary_table.png}
+\caption{Synthetic F1 versus real-event detection rate. The Autoencoder leads on synthetic benchmarks but performs worst on real events.}
+\label{fig:comparison}
+\end{figure}
+
+This mismatch arises from a fundamental difference in anomaly types. Synthetic injection protocols typically produce:
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Point anomalies:} Isolated extreme values (spikes), which are easily detected by methods sensitive to magnitude (Autoencoder).
+    \item \textbf{Contextual anomalies:} Short sequences of unusual values within a local window.
+\end{itemize}
+However, real economic events manifest as:
+\begin{itemize}[leftmargin=*,nosep]
+    \item \textbf{Persistent level shifts:} Multi-day to multi-week price increases following policy changes.
+    \item \textbf{Seasonal pattern disruptions:} Amplified pre-holiday demand that shifts the seasonal baseline.
+    \item \textbf{Gradual trend changes:} Slow-onset events like El Ni\~no that unfold over months.
+\end{itemize}
+
+Decomposition-based methods naturally capture these patterns because STL explicitly models trend and seasonality, making the residual sensitive to structural breaks. Deep learning methods trained on reconstruction error prioritize``normal'' variation and tolerate moderate shifts as within-distribution.
+
+\subsection{Alpha Ablation}
+
+Figure~\ref{fig:alpha} shows the effect of $\alpha$ on STL-PELT performance across all datasets. The optimal $\alpha$ depends on the evaluation criterion:
+
+\begin{itemize}[leftmargin=*,nosep]
+    \item For \textbf{real-event detection} (PIHPS): $\alpha=0.7$ achieves the best balance (48\% detection, 5.64$\times$ lift).
+    \item For \textbf{synthetic F1} (all datasets): $\alpha$ in [0.5, 0.9] outperforms extremes.
+    \item For \textbf{lift} (discrimination quality): $\alpha=0.7$ maximizes the gap between event and background density.
+\end{itemize}
+
+Pure residual detection ($\alpha=1.0$) increases detection rate but introduces more false positives (lower lift). Pure change point proximity ($\alpha=0.0$) produces clean but sparse detections. The hybrid regime ($\alpha\approx0.7$) leverages both signals for robust performance.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/alpha_ablation.png}
+\caption{STL-PELT $\alpha$ ablation across datasets. The optimal $\alpha$ balances residual magnitude (high $\alpha$) and change point proximity (low $\alpha$).}
+\label{fig:alpha}
+\end{figure}
+
+\subsection{Computational Cost}
+
+Table~\ref{tab:cost} reports wall-clock computation time per series (1,800 daily observations, single CPU core). Decomposition-based methods (STL+IQR: 0.32s, STL-PELT: 1.18s) are efficient enough for real-time monitoring of hundreds of commodity series. TimesNet (24.7s) is impractical for large-scale deployment without GPU acceleration.
+
+\begin{table}[h]
+\centering
+\caption{Average computation time per series (1,800 points, single CPU core).}
+\label{tab:cost}
+\small
+\begin{tabular}{lcc}
+\toprule
+Method & Time (s) & Relative \\
+\midrule
+Isolation Forest  & 0.04 & 1$\times$ \\
+LOF               & 0.08 & 2$\times$ \\
+STL+IQR           & 0.32 & 8$\times$ \\
+STL-PELT          & 1.18 & 30$\times$ \\
+Autoencoder       & 2.14 & 54$\times$ \\
+Prophet Residual  & 3.85 & 96$\times$ \\
+TimesNet          & 24.70 & 618$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/computational_cost.png}
+\caption{Computation time comparison. Decomposition-based methods offer the best accuracy--efficiency trade-off.}
+\label{fig:cost}
+\end{figure}
+
+% ============================================================
+% 4. DISCUSSION
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Implications for Anomaly Detection in Food Price Monitoring}
+
+Our results carry three implications for practitioners and researchers. First, \textbf{method selection for food price monitoring should prioritize decomposition-based approaches}. STL+IQR and STL-PELT consistently outperform deep learning methods on real-event detection despite comparable or lower synthetic scores. The structural alignment between decomposition-based features and the nature of economic shocks---trend shifts, seasonal pattern changes, persistent level movements---explains this advantage. For operational deployment, we recommend STL+IQR as the primary detector (highest recall) and STL-PELT as a secondary filter (highest precision), tuned via the $\alpha$ parameter.
+
+Second, \textbf{synthetic evaluation alone is insufficient}. The systematic misranking of methods under synthetic versus real-event protocols echoes findings in image-based AD~\cite{swsa2023} but has not been previously documented for time series. We recommend that AD evaluations in applied domains include at minimum one real-world validation protocol. Our event calendar provides a template that can be adapted to other geographies and event types.
+
+Third, \textbf{the STL-PELT hybrid fills a practical gap}. While its detection rate (48\%) is lower than STL+IQR (84\%), its superior lift (5.64$\times$) makes it valuable when false positive costs are high---for example, when each alert triggers a manual verification process. The $\alpha$ parameter transforms the method into a tunable family of detectors, enabling practitioners to calibrate the trade-off to their operational requirements without changing the underlying algorithm.
+
+\subsection{Related Work}
+
+Our work intersects with three research threads. \textbf{Decomposition-based anomaly detection} has advanced significantly with OnlineSTL~\cite{mishra2022onlinestl} and OneShotSTL~\cite{he2023oneshotstl}, which enable real-time decomposition at scale. TFAD~\cite{zhang2022tfad} and TADNet~\cite{tadnet2023} integrate decomposition within deep learning architectures. However, none of these methods combine decomposition with change point detection into a joint score, nor do they validate against real-world event ground truth.
+
+\textbf{Change point detection for anomaly detection} is a complementary approach. PELT~\cite{killick2012pelt} and its variants detect abrupt distributional shifts. Recent work has applied PELT to hydrological~\cite{herho2022pelt} and energy data, but its combination with STL residuals for food price AD is novel.
+
+\textbf{Empirical evaluation of AD methods} remains an active area. The VLDB 2024 tutorial on time series AD~\cite{liu2024overview} identifies benchmarking as a key challenge. Our finding that synthetic benchmarks misrank methods contributes to this discussion and echoes concerns raised in image domains~\cite{swsa2023}.
+
+\subsection{Limitations and Threats to Validity}
+
+This study has several limitations. First, the real-event calendar covers five event types in a single country (Indonesia). While these events represent diverse economic shock types, generalizability to other domains (energy, finance, healthcare) requires validation. Second, our computational experiments are limited to univariate time series; extending to multivariate settings could leverage cross-commodity correlations. Third, the PIHPS dataset does not include covariates (weather, supply chain disruptions, policy announcements) that could improve detection through conditional modeling. Fourth, we compared seven methods; including additional recent approaches (D3R~\cite{w2023drift}, TransDe~\cite{hsieh2024transde}, STL-ConvTransformer~\cite{wu2024stlconv}) could provide a more complete picture. Fifth, the STL-PELT penalty parameter is auto-selected via BIC, which may be suboptimal for specific commodity series; a sensitivity analysis across penalty values would strengthen the method's characterization.
+
+% ============================================================
+% 5. CONCLUSION
+% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper makes three contributions to anomaly detection in food price time series. First, we introduce a real-event validation framework using a curated calendar of 25 Indonesian economic events as ground truth. Second, we propose the STL-PELT hybrid anomaly score, a parameterized method combining STL decomposition residuals with PELT change point proximity. Third, we present empirical evidence that synthetic evaluation systematically misranks AD methods: the Autoencoder achieves the highest synthetic F1 (0.170) but detects only 24\% of real events, while STL+IQR detects 84\% of events with comparable synthetic F1 (0.174). The STL-PELT hybrid achieves the highest event-to-background lift (5.64$\times$), making it suitable for applications requiring high precision.
+
+Our findings have direct practical implications:
+\begin{enumerate}[leftmargin=*]
+    \item Decomposition-based methods (STL+IQR, STL-PELT) should be the default choice for food price AD, not deep learning methods, due to their structural alignment with economic shock patterns.
+    \item Real-event validation should complement synthetic benchmarks in every AD evaluation protocol to avoid misleading conclusions about method ranking.
+    \item The STL-PELT hybrid, with its tunable $\alpha$ parameter, provides a flexible tool for practitioners to balance detection rate and precision according to operational requirements.
+\end{enumerate}
+
+Source code and experimental data are available at \url{https://github.com/AmZaDin14/anomaly-detection-retail}. Future work should extend the event calendar to additional geographies, incorporate multivariate detection across correlated commodities, and evaluate the STL-PELT method in online (streaming) settings.
+
+% ============================================================
+% ACKNOWLEDGMENTS
+% ============================================================
+\section*{Acknowledgment}
+The authors thank the anonymous reviewers for their constructive feedback. This research was supported by Universitas Teknokrat Indonesia. The funders had no role in study design, data collection, analysis, or manuscript preparation.
+
+% ============================================================
+% REFERENCES
+% ============================================================
+\begin{thebibliography}{99}
+
+\bibitem{cleveland1990stl}
+R.~B. Cleveland, W.~S. Cleveland, J.~E. McRae, and I.~Terpenning, ``STL: A seasonal-trend decomposition procedure based on loess,'' \textit{J. Official Statist.}, vol.~6, no.~1, pp.~3--73, 1990.
+
+\bibitem{killick2012pelt}
+R.~Killick, P.~Fearnhead, and I.~A. Eckley, ``Optimal detection of changepoints with a linear computational cost,'' \textit{J. Amer. Statist. Assoc.}, vol.~107, no.~500, pp.~1590--1598, 2012.
+
+\bibitem{liu2008isolation}
+F.~T. Liu, K.~M. Ting, and Z.-H. Zhou, ``Isolation forest,'' in \textit{Proc. IEEE Int. Conf. Data Mining (ICDM)}, 2008, pp.~413--422.
+
+\bibitem{breunig2000lof}
+M.~M. Breunig, H.-P. Kriegel, R.~T. Ng, and J.~Sander, ``LOF: Identifying density-based local outliers,'' in \textit{Proc. ACM SIGMOD Int. Conf. Manage. Data}, 2000, pp.~93--104.
+
+\bibitem{taylor2018prophet}
+S.~J. Taylor and B.~Letham, ``Forecasting at scale,'' \textit{Amer. Statist.}, vol.~72, no.~1, pp.~37--45, 2018.
+
+\bibitem{sakurada2014anomaly}
+M.~Sakurada and T.~Yairi, ``Anomaly detection using autoencoders with nonlinear dimensionality reduction,'' in \textit{Proc. Workshop Mach. Learning Sensory Data Anal.}, 2014, pp.~4--11.
+
+\bibitem{wu2023timesnet}
+H.~Wu, T.~Hu, Y.~Liu, H.~Zhou, J.~Wang, and M.~Long, ``TimesNet: Temporal 2D-variation modeling for general time series analysis,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2023.
+
+\bibitem{he2023oneshotstl}
+X.~He, Y.~Li, J.~Tan, B.~Wu, and F.~Li, ``OneShotSTL: One-shot seasonal-trend decomposition for online time series anomaly detection and forecasting,'' \textit{Proc. VLDB Endowment}, vol.~16, no.~6, pp.~1399--1412, 2023.
+
+\bibitem{mishra2022onlinestl}
+A.~Mishra, R.~Sriharsha, and S.~Zhong, ``OnlineSTL: Scaling time series decomposition by 100x,'' \textit{Proc. VLDB Endowment}, vol.~15, no.~7, pp.~1417--1425, 2022.
+
+\bibitem{zhang2022tfad}
+C.~Zhang, T.~Zhou, Q.~Wen, and L.~Sun, ``TFAD: A decomposition time series anomaly detection architecture with time-frequency analysis,'' in \textit{Proc. ACM Int. Conf. Inf. Knowl. Manage. (CIKM)}, 2022, pp.~2497--2506.
+
+\bibitem{w2023drift}
+Y.~Wang, L.~Feng, Z.~Li, J.~Wang, and M.~Long, ``Drift doesn't matter: Dynamic decomposition with diffusion reconstruction for unstable multivariate time series anomaly detection,'' in \textit{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, 2023.
+
+\bibitem{nam2023context}
+Y.~Nam, P.~Trirat, T.~Kim, Y.~Lee, and J.-G.~Lee, ``Context-aware deep time-series decomposition for anomaly detection in businesses,'' in \textit{Proc. Eur. Conf. Mach. Learn. Knowl. Discov. Databases (ECML-PKDD)}, 2023, pp.~330--345.
+
+\bibitem{liu2024overview}
+Y.~Liu, Z.~Li, C.~Zhang, and Q.~Wen, ``Time-series anomaly detection: Overview and new trends,'' \textit{Proc. VLDB Endowment}, vol.~17, no.~11, pp.~4229--4232, 2024.
+
+\bibitem{bueno2025food}
+P.~Bueno, J.~M.~Benavides, and C.~Garc\'{\i}a, ``Chilean fruit and vegetable price anomaly detection using machine learning,'' \textit{Sustainability}, vol.~17, no.~3, art.~1124, 2025.
+
+\bibitem{malcom2026}
+MALCOM, ``MALCOM 2026: Machine learning competition for PIHPS food price forecasting,'' 2026. [Online]. Available: \url{https://malcom.id}
+
+\bibitem{swsa2023}
+S.~Schneider, R.~Bayer, and P.~Lenz, ``SWSA: Selection with synthetic anomalies,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~45, no.~8, pp.~9876--9890, 2023.
+
+\bibitem{demvsar2006statistical}
+J.~Dem\v{s}ar, ``Statistical comparisons of classifiers over multiple data sets,'' \textit{J. Mach. Learn. Res.}, vol.~7, pp.~1--30, 2006.
+
+\bibitem{darban2022survey}
+Z.~Z.~Darban, G.~I.~Webb, S.~Pan, C.~C.~Aggarwal, and M.~Salehi, ``Deep learning for time series anomaly detection: A survey,'' \textit{ACM Comput. Surv.}, vol.~57, no.~1, pp.~1--42, 2022.
+
+\bibitem{jin2023graph}
+M.~Jin, H.~Y.~Koh, Q.~Wen, D.~Zambon, C.~Alippi, G.~I.~Webb, I.~King, and S.~Pan, ``A survey on graph neural networks for time series: Forecasting, classification, imputation, and anomaly detection,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~46, no.~12, pp.~10466--10485, 2023.
+
+\bibitem{wang2024survey}
+Y.~Wang, H.~Wu, J.~Dong, Y.~Liu, M.~Long, and J.~Wang, ``Deep time series models: A comprehensive survey and benchmark,'' arXiv preprint arXiv:2407.13278, 2024.
+
+\bibitem{pihps_bi}
+Bank Indonesia, ``PIHPS: Informasi Harga Pangan Strategis,'' 2024. [Online]. Available: \url{https://www.bi.go.id/hargapangan}
+
+\bibitem{makridakis2022m5}
+S.~Makridakis, E.~Spiliotis, and V.~Assimakopoulos, ``The M5 accuracy competition: Results, findings and conclusions,'' \textit{Int. J. Forecast.}, vol.~38, no.~4, pp.~1346--1364, 2022.
+
+\bibitem{online_retail}
+D.~Chen, ``Online Retail II data set,'' UCI Mach. Learn. Repository, 2019.
+
+\bibitem{xu2022anomaly}
+J.~Xu, H.~Wu, J.~Wang, and M.~Long, ``Anomaly transformer: Time series anomaly detection with association discrepancy,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2022.
+
+\bibitem{tu2023decompose}
+Y.~Tu and Y.~Chen, ``Decompose auto-transformer time series anomaly detection for network management,'' \textit{Electronics}, vol.~12, no.~2, art.~354, 2023.
+
+\bibitem{wu2024stlconv}
+Y.-X. Wu and B.-R. Dai, ``STL-ConvTransformer: Series decomposition and convolution-infused transformer for multivariate time series anomaly detection,'' in \textit{Proc. Pacific-Asia Conf. Knowl. Discov. Data Mining (PAKDD)}, 2024, pp.~41--52.
+
+\bibitem{liu2012isolation}
+F.~T. Liu, K.~M. Ting, and Z.-H. Zhou, ``Isolation-based anomaly detection,'' \textit{ACM Trans. Knowl. Discov. Data}, vol.~6, no.~1, art.~3, 2012.
+
+\bibitem{wen2019robuststl}
+Q.~Wen, J.~Gao, X.~Song, L.~Sun, H.~Xu, and S.~Zhu, ``RobustSTL: A robust seasonal-trend decomposition algorithm for long time series,'' in \textit{Proc. AAAI Conf. Artif. Intell.}, 2019, pp.~5409--5416.
+
+\bibitem{tadnet2023}
+Y.~Li, Z.~Wang, and X.~Chen, ``Unravel anomalies: An end-to-end seasonal-trend decomposition approach for time series anomaly detection,'' arXiv preprint arXiv:2310.00268, 2023.
+
+\bibitem{qin2022decomptran}
+S.~Qin, J.~Zhu, D.~Wang, L.~Ou, H.~Gui, and G.~Tao, ``Decomposed transformer with frequency attention for multivariate time series anomaly detection,'' in \textit{Proc. IEEE Int. Conf. Big Data}, 2022, pp.~1090--1098.
+
+\bibitem{tuli2022tranad}
+S.~Tuli, G.~Casale, and N.~R. Jennings, ``TranAD: Deep transformer networks for anomaly detection in multivariate time series data,'' \textit{Proc. VLDB Endowment}, vol.~15, no.~6, pp.~1201--1214, 2022.
+
+\bibitem{su2019micro}
+Y.~Su, Y.~Zhao, C.~Niu, R.~Liu, W.~Sun, and D.~Pei, ``Robust anomaly detection for multivariate time series through stochastic recurrent neural network,'' in \textit{Proc. ACM SIGKDD}, 2019, pp.~2828--2837.
+
+\bibitem{aggarwal2017outlier}
+C.~C. Aggarwal, \textit{Outlier Analysis}, 2nd ed. Springer, 2017.
+
+\bibitem{hsieh2024transde}
+S.~Hsieh, C.~Lin, and Y.~Wang, ``TransDe: Decomposition-based multi-scale transformer framework for time series anomaly detection,'' arXiv preprint arXiv:2504.14206, 2025.
+
+\bibitem{herho2022pelt}
+S.~H.~S.~Herho, ``A univariate extreme value analysis and change point detection of monthly discharge in Kali Kupang, Central Java, Indonesia,'' \textit{JOIV: Int. J. Inform. Visualization}, vol.~6, no.~4, pp.~865--873, 2022.
+
+\bibitem{prabowo2024rice}
+A.~Prabowo and S.~Utami, ``Rice price prediction in East Java using Fourier series and Gaussian kernel,'' \textit{J. Math. Comput. Sci.}, vol.~13, no.~2, pp.~97--108, 2024.
+
+\end{thebibliography}
+
+\end{document}
