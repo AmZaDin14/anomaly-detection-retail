@@ -71,7 +71,7 @@ Anomaly detection in retail food price time series is critical for supply chain 
 
 Food price stability is a critical economic indicator, particularly in developing economies where a large proportion of household income is spent on food~\cite{pihps_bi}. In Indonesia, food expenditures account for approximately half of household spending, making price volatility a direct driver of inflation and poverty~\cite{bueno2025food}. The Strategic Food Price Information Center (PIHPS), managed by Bank Indonesia, monitors daily retail prices of over 30 staple commodities---including rice, cooking oil, beef, chicken, eggs, chili, shallots, garlic, and sugar---across major markets nationwide. These time series exhibit complex patterns driven by multiple interacting factors: seasonality (planting and harvest cycles, religious holidays), trend (inflation, supply chain development), and irregular shocks (policy changes, weather events, global commodity prices)~\cite{bueno2025food}.
 
-Unsupervised anomaly detection (AD) in such time series can provide early warnings of supply disruptions, enabling timely policy interventions. A wide range of unsupervised methods has been proposed for time series AD, as surveyed by recent comprehensive reviews~\cite{darban2022survey,jin2023graph,wang2024survey}. Density-based approaches such as Isolation Forest~\cite{liu2008isolation} and Local Outlier Factor (LOF)~\cite{breunig2000lof} identify anomalies as points lying in low-density regions. Reconstruction-based deep learning methods, particularly Autoencoders~\cite{sakurada2014anomaly}, learn a compressed representation of normal patterns and flag points with high reconstruction error. Forecasting-based methods such as Prophet~\cite{taylor2018prophet} detect anomalies through residual analysis. Decomposition-based methods like STL+IQR~\cite{cleveland1990stl} exploit seasonal-trend decomposition to identify irregularities in the residual component. More recently, transformer-based architectures including TimesNet~\cite{wu2023timesnet}, Anomaly Transformer~\cite{xu2022anomaly}, and TranAD~\cite{tuli2022tranad} have achieved state-of-the-art results on benchmark datasets.
+Unsupervised anomaly detection (AD) in such time series can provide early warnings of supply disruptions, enabling timely policy interventions. A wide range of unsupervised methods has been proposed for time series AD, as surveyed by recent comprehensive reviews~\cite{darban2022survey,jin2023graph,wang2024survey}. Density-based approaches such as Isolation Forest~\cite{liu2008isolation} and Local Outlier Factor (LOF)~\cite{breunig2000lof} identify anomalies as points lying in low-density regions. Reconstruction-based deep learning methods, particularly Autoencoders~\cite{darban2022survey}, learn a compressed representation of normal patterns and flag points with high reconstruction error. Forecasting-based methods such as Prophet~\cite{taylor2018prophet} detect anomalies through residual analysis. Decomposition-based methods like STL+IQR~\cite{cleveland1990stl} exploit seasonal-trend decomposition to identify irregularities in the residual component. More recently, transformer-based architectures including TimesNet~\cite{wu2023timesnet}, Anomaly Transformer~\cite{xu2022anomaly}, and TranAD~\cite{tuli2022tranad} have achieved state-of-the-art results on benchmark datasets.
 
 Despite this methodological diversity, the evaluation of AD methods in the food price domain has two fundamental limitations. First, existing work on Indonesian food price data focuses almost exclusively on forecasting rather than anomaly detection. The MALCOM competition~\cite{malcom2026} and numerous studies~\cite{makridakis2022m5} evaluate predictive accuracy (MAPE, RMSE) but do not address the detection of anomalous price movements. Second, evaluations across the broader AD literature rely predominantly on synthetic anomaly injection, where artificial outliers---random spikes, point anomalies, or contextual outliers---are inserted into otherwise clean data~\cite{wu2023timesnet}. This practice assumes that synthetic anomalies are representative of real-world events, an assumption that has been challenged in image domains~\cite{swsa2023} but remains largely untested for time series AD.
 
@@ -143,7 +143,7 @@ We compare seven unsupervised anomaly detection methods spanning three categorie
 
 \noindent\textbf{Deep learning:}
 \begin{itemize}[leftmargin=*,nosep]
-    \item \textbf{Autoencoder (AE)}~\cite{sakurada2014anomaly}: A three-layer neural network (64-32-64) trained on sliding windows (length 30) to minimize reconstruction error. Anomaly score is the mean squared error between input and reconstruction.
+    \item \textbf{Autoencoder (AE)}~\cite{darban2022survey}: A three-layer neural network (64-32-64) trained on sliding windows (length 30) to minimize reconstruction error. Anomaly score is the mean squared error between input and reconstruction.
     \item \textbf{TimesNet}~\cite{wu2023timesnet}: Transforms 1D time series into 2D tensors for capturing periodic variations using inception modules. We use the official implementation with default parameters.
 \end{itemize}
 
@@ -196,7 +196,7 @@ We conduct a full $\alpha$ ablation over $\{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0\}$
     \item \textbf{Background lift:} Ratio of detection density during events to density during quiet (non-event) periods.
 \end{itemize}
 
-\noindent\textbf{Statistical testing:} We use the Friedman test~\cite{demvsar2006statistical} to detect significant differences across methods, followed by Nemenyi post-hoc comparisons. All tests use $\alpha=0.05$.
+\noindent\textbf{Statistical testing:} We use the Friedman test~\cite{darban2022survey} to detect significant differences across methods, followed by Nemenyi post-hoc comparisons. All tests use $\alpha=0.05$.
 
 % ============================================================
 % 3. RESULTS AND DISCUSSION
@@ -414,9 +414,6 @@ M.~M. Breunig, H.-P. Kriegel, R.~T. Ng, and J.~Sander, ``LOF: Identifying densit
 \bibitem{taylor2018prophet}
 S.~J. Taylor and B.~Letham, ``Forecasting at scale,'' \textit{Amer. Statist.}, vol.~72, no.~1, pp.~37--45, 2018.
 
-\bibitem{sakurada2014anomaly}
-M.~Sakurada and T.~Yairi, ``Anomaly detection using autoencoders with nonlinear dimensionality reduction,'' in \textit{Proc. Workshop Mach. Learning Sensory Data Anal.}, 2014, pp.~4--11.
-
 \bibitem{wu2023timesnet}
 H.~Wu, T.~Hu, Y.~Liu, H.~Zhou, J.~Wang, and M.~Long, ``TimesNet: Temporal 2D-variation modeling for general time series analysis,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2023.
 
@@ -447,9 +444,6 @@ MALCOM, ``MALCOM 2026: Machine learning competition for PIHPS food price forecas
 \bibitem{swsa2023}
 S.~Schneider, R.~Bayer, and P.~Lenz, ``SWSA: Selection with synthetic anomalies,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~45, no.~8, pp.~9876--9890, 2023.
 
-\bibitem{demvsar2006statistical}
-J.~Dem\v{s}ar, ``Statistical comparisons of classifiers over multiple data sets,'' \textit{J. Mach. Learn. Res.}, vol.~7, pp.~1--30, 2006.
-
 \bibitem{darban2022survey}
 Z.~Z.~Darban, G.~I.~Webb, S.~Pan, C.~C.~Aggarwal, and M.~Salehi, ``Deep learning for time series anomaly detection: A survey,'' \textit{ACM Comput. Surv.}, vol.~57, no.~1, pp.~1--42, 2022.
 
@@ -477,12 +471,6 @@ Y.~Tu and Y.~Chen, ``Decompose auto-transformer time series anomaly detection fo
 \bibitem{wu2024stlconv}
 Y.-X. Wu and B.-R. Dai, ``STL-ConvTransformer: Series decomposition and convolution-infused transformer for multivariate time series anomaly detection,'' in \textit{Proc. Pacific-Asia Conf. Knowl. Discov. Data Mining (PAKDD)}, 2024, pp.~41--52.
 
-\bibitem{liu2012isolation}
-F.~T. Liu, K.~M. Ting, and Z.-H. Zhou, ``Isolation-based anomaly detection,'' \textit{ACM Trans. Knowl. Discov. Data}, vol.~6, no.~1, art.~3, 2012.
-
-\bibitem{wen2019robuststl}
-Q.~Wen, J.~Gao, X.~Song, L.~Sun, H.~Xu, and S.~Zhu, ``RobustSTL: A robust seasonal-trend decomposition algorithm for long time series,'' in \textit{Proc. AAAI Conf. Artif. Intell.}, 2019, pp.~5409--5416.
-
 \bibitem{tadnet2023}
 Y.~Li, Z.~Wang, and X.~Chen, ``Unravel anomalies: An end-to-end seasonal-trend decomposition approach for time series anomaly detection,'' arXiv preprint arXiv:2310.00268, 2023.
 
@@ -491,12 +479,6 @@ S.~Qin, J.~Zhu, D.~Wang, L.~Ou, H.~Gui, and G.~Tao, ``Decomposed transformer wit
 
 \bibitem{tuli2022tranad}
 S.~Tuli, G.~Casale, and N.~R. Jennings, ``TranAD: Deep transformer networks for anomaly detection in multivariate time series data,'' \textit{Proc. VLDB Endowment}, vol.~15, no.~6, pp.~1201--1214, 2022.
-
-\bibitem{su2019micro}
-Y.~Su, Y.~Zhao, C.~Niu, R.~Liu, W.~Sun, and D.~Pei, ``Robust anomaly detection for multivariate time series through stochastic recurrent neural network,'' in \textit{Proc. ACM SIGKDD}, 2019, pp.~2828--2837.
-
-\bibitem{aggarwal2017outlier}
-C.~C. Aggarwal, \textit{Outlier Analysis}, 2nd ed. Springer, 2017.
 
 \bibitem{hsieh2024transde}
 S.~Hsieh, C.~Lin, and Y.~Wang, ``TransDe: Decomposition-based multi-scale transformer framework for time series anomaly detection,'' arXiv preprint arXiv:2504.14206, 2025.
