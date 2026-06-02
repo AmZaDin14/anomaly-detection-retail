@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+*.egg
+build/
+dist/
+wheels/
+*.whl
+
+# Virtual environment
+.venv/
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*cred*
+*secret*
+*token*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Raw data (too large)
+data/raw/
+
+# Templates
+joscex_template.docx
+template.docx

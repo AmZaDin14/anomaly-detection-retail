@@ -1,0 +1,130 @@
+================================================================================
+CLEAN PIHPS VALIDATION: REAL EVENT DETECTION
+================================================================================
+
+--- BBM Hike 2022 ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              beras                      10    1.000        2
+  STL+IQR              minyak_goreng              10    1.000        2
+  STL+IQR              cabai_rawit                10    1.000        2
+  STL+IQR              gula_pasir                  0    0.000       48
+  STL+IQR              telur_ayam                  9    0.900        2
+  STL+IQR              daging_ayam                 1    0.100       13
+  STL-PELT_0.7         beras                      10    1.000        2
+  STL-PELT_0.7         minyak_goreng              10    1.000        2
+  STL-PELT_0.7         cabai_rawit                 0    0.000      N/A
+  STL-PELT_0.7         gula_pasir                  0    0.000       97
+  STL-PELT_0.7         telur_ayam                  4    0.400        2
+  STL-PELT_0.7         daging_ayam                 0    0.000       40
+  Autoencoder          beras                       0    0.000      N/A
+  Autoencoder          minyak_goreng               0    0.000      N/A
+  Autoencoder          cabai_rawit                 0    0.000      534
+  Autoencoder          gula_pasir                  0    0.000      N/A
+  Autoencoder          telur_ayam                  0    0.000      N/A
+  Autoencoder          daging_ayam                 0    0.000      N/A
+
+--- El Nino 2023 ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              beras                       1    0.011       34
+  STL+IQR              cabai_rawit                 1    0.011       34
+  STL+IQR              bawang_merah                2    0.023        0
+  STL+IQR              bawang_putih               18    0.207        0
+  STL-PELT_0.7         beras                       1    0.011       34
+  STL-PELT_0.7         cabai_rawit                 0    0.000      N/A
+  STL-PELT_0.7         bawang_merah                0    0.000      N/A
+  STL-PELT_0.7         bawang_putih                0    0.000      N/A
+  Autoencoder          beras                       0    0.000      N/A
+  Autoencoder          cabai_rawit                 0    0.000      263
+  Autoencoder          bawang_merah                0    0.000      320
+  Autoencoder          bawang_putih                0    0.000      N/A
+
+--- Idul Adha 2023 ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              daging_sapi                11    1.000        0
+  STL+IQR              daging_ayam                 9    0.818        0
+  STL-PELT_0.7         daging_sapi                 0    0.000      N/A
+  STL-PELT_0.7         daging_ayam                 8    0.727        0
+  Autoencoder          daging_sapi                 0    0.000      N/A
+  Autoencoder          daging_ayam                 0    0.000      N/A
+
+--- Idul Fitri 2022 ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              beras                       7    0.778        0
+  STL+IQR              gula_pasir                  8    0.889        0
+  STL+IQR              minyak_goreng               9    1.000        0
+  STL+IQR              telur_ayam                  3    0.333       12
+  STL+IQR              daging_ayam                 9    1.000        0
+  STL+IQR              daging_sapi                 9    1.000        0
+  STL-PELT_0.7         beras                       7    0.778        0
+  STL-PELT_0.7         gula_pasir                  8    0.889        0
+  STL-PELT_0.7         minyak_goreng               9    1.000        0
+  STL-PELT_0.7         telur_ayam                  3    0.333       12
+  STL-PELT_0.7         daging_ayam                 6    0.667        5
+  STL-PELT_0.7         daging_sapi                 6    0.667        5
+  Autoencoder          beras                       4    0.444        7
+  Autoencoder          gula_pasir                  0    0.000      N/A
+  Autoencoder          minyak_goreng               2    0.222       13
+  Autoencoder          telur_ayam                  2    0.222       13
+  Autoencoder          daging_ayam                 4    0.444        7
+  Autoencoder          daging_sapi                 4    0.444        7
+
+--- Idul Fitri 2023 ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              beras                       0    0.000       17
+  STL+IQR              gula_pasir                  0    0.000       74
+  STL+IQR              minyak_goreng               1    0.091       10
+  STL+IQR              telur_ayam                  0    0.000       32
+  STL+IQR              daging_ayam                 3    0.273       12
+  STL+IQR              daging_sapi                11    1.000        0
+  STL-PELT_0.7         beras                       0    0.000       17
+  STL-PELT_0.7         gula_pasir                  0    0.000       97
+  STL-PELT_0.7         minyak_goreng               0    0.000      140
+  STL-PELT_0.7         telur_ayam                  0    0.000       81
+  STL-PELT_0.7         daging_ayam                 0    0.000       66
+  STL-PELT_0.7         daging_sapi                 0    0.000      N/A
+  Autoencoder          beras                       0    0.000      N/A
+  Autoencoder          gula_pasir                  0    0.000      N/A
+  Autoencoder          minyak_goreng               0    0.000      N/A
+  Autoencoder          telur_ayam                  0    0.000      N/A
+  Autoencoder          daging_ayam                 0    0.000      N/A
+  Autoencoder          daging_sapi                 0    0.000      N/A
+
+--- Minyak Goreng Crisis ---
+  Method               Commodity             Flagged  Density Delay(d)
+  ----------------------------------------------------------------
+  STL+IQR              minyak_goreng              62    1.000        0
+  STL-PELT_0.7         minyak_goreng              62    1.000        0
+  Autoencoder          minyak_goreng              26    0.419       20
+
+================================================================================
+DETECTION RATE BY METHOD
+================================================================================
+  STL+IQR             : 21/25 pairs detected (84%), avg density=0.537
+  STL-PELT_0.7        : 12/25 pairs detected (48%), avg density=0.339
+  Autoencoder         : 6/25 pairs detected (24%), avg density=0.088
+
+AVERAGE DETECTION DELAY (days from event start)
+  STL+IQR             : 11.8 days (across 25 detections)
+  STL-PELT_0.7        : 31.6 days (across 19 detections)
+  Autoencoder         : 131.6 days (across 9 detections)
+
+================================================================================
+QUIET PERIOD BASELINE (background false positive density)
+================================================================================
+  STL+IQR             : mean=0.1208, std=0.2157
+  STL-PELT_0.7        : mean=0.0601, std=0.1118
+  Autoencoder         : mean=0.0208, std=0.0468
+
+================================================================================
+LIFT (event density / background density)
+================================================================================
+  STL+IQR             : event density=0.5374, background=0.1208, lift=4.45x
+  STL-PELT_0.7        : event density=0.3389, background=0.0601, lift=5.64x
+  Autoencoder         : event density=0.0879, background=0.0208, lift=4.23x
+
+Done.

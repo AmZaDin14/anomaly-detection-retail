@@ -1,0 +1,28 @@
+INFO:__main__:Running TimesNet on 90 calendar configs...
+INFO:__main__:  [TimesNet] 1/90
+INFO:__main__:  [TimesNet] 5/90
+INFO:__main__:  [TimesNet] 10/90
+INFO:__main__:  [TimesNet] 15/90
+INFO:__main__:  [TimesNet] 20/90
+INFO:__main__:  [TimesNet] 25/90
+INFO:__main__:  [TimesNet] 30/90
+INFO:__main__:  [TimesNet] 35/90
+INFO:__main__:  [TimesNet] 40/90
+INFO:__main__:  [TimesNet] 45/90
+INFO:__main__:  [TimesNet] 50/90
+INFO:__main__:  [TimesNet] 55/90
+INFO:__main__:  [TimesNet] 60/90
+INFO:__main__:  [TimesNet] 65/90
+INFO:__main__:  [TimesNet] 70/90
+INFO:__main__:  [TimesNet] 75/90
+INFO:__main__:  [TimesNet] 80/90
+INFO:__main__:  [TimesNet] 85/90
+INFO:__main__:  [TimesNet] 90/90
+INFO:__main__:Saved 90 rows to /home/amri/Code/python/anomaly-detection-retail/data/results/timesnet_calendar_results.parquet
+INFO:__main__:
+              precision  recall      f1
+anomaly_rate                           
+0.01             0.1405  0.4196  0.1904
+0.05             0.4546  0.2768  0.3341
+0.10             0.6393  0.2227  0.3275
+INFO:__main__:Done.
