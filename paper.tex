@@ -25,6 +25,11 @@
 \usepackage{textcomp}
 \usepackage{gensymb}
 \usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{hyphenat}
+\usepackage{ragged2e}
+\setlength{\emergencystretch}{1em}
+\setlength{\overfullrule}{0pt}
 
 \hypersetup{
     colorlinks=true,
@@ -36,12 +41,13 @@
 % ============================================================
 % TITLE & AUTHORS
 % ============================================================
-\title{Uncovering the Synthetic--Real Evaluation Gap in Unsupervised\\Anomaly Detection for Food Price Time Series}
+\title{Uncovering the Synthetic--Real\\Evaluation Gap in Unsupervised Anomaly\\Detection for Food Price Time Series}
 
 \author{
     Mustika$^{1\ast}$ and Amri Reza Wahyudin$^{2}$ \\
-    $^{1}$Department of Computer Science, Universitas Muhammadiyah Metro, Metro, Indonesia \\
-    $^{2}$Department of Engineering and Computer Science, Universitas Teknokrat Indonesia, Bandar Lampung, Indonesia \\
+    $^{1}$Dept. of Computer Science, Univ. Muhammadiyah Metro, Metro, Indonesia \\
+    $^{2}$Dept. of Eng. and Computer Science, Univ. Teknokrat Indonesia,\\
+    \hspace*{2em}Bandar Lampung, Indonesia \\
     $^{\ast}$Corresponding author: \texttt{mustika@teknokrat.ac.id}
 }
 
@@ -114,19 +120,20 @@ We construct a ground-truth event calendar for the PIHPS dataset by identifying 
 \centering
 \caption{Real economic event calendar for PIHPS validation.}
 \label{tab:events}
-\small
+\footnotesize
+\setlength{\tabcolsep}{2pt}
 \begin{tabular}{llcc}
 \toprule
-Event & Date & Commodities & Pairs \\
+Event & Date & Commodities & N \\
 \midrule
-BBM Fuel Hike      & Sep 2022  & Rice, cooking oil, cayenne, sugar, eggs, chicken & 6 \\
-Idul Fitri 2022    & May 2022  & Rice, sugar, cooking oil, eggs, chicken, beef    & 6 \\
-Idul Fitri 2023    & Apr 2023  & Rice, sugar, cooking oil, eggs, chicken, beef    & 6 \\
-Idul Adha 2023     & Jun 2023  & Beef, chicken                                     & 2 \\
-El Ni\~no 2023     & Jun--Oct  & Rice, cayenne, shallots, garlic                   & 4 \\
-Cooking Oil Crisis & Jan 2022  & Cooking oil                                       & 1 \\
+BBM Fuel      & Sep 2022 & Rice, oil, chili, sugar, egg, chick & 6 \\
+Idul Fitri 22 & May 2022 & Rice, sugar, oil, egg, chick, beef  & 6 \\
+Idul Fitri 23 & Apr 2023 & Rice, sugar, oil, egg, chick, beef  & 6 \\
+Idul Adha 23  & Jun 2023 & Beef, chicken                        & 2 \\
+El Ni\~no 23  & Jun--Oct & Rice, chili, shallot, garlic        & 4 \\
+Oil Crisis    & Jan 2022 & Cooking oil                          & 1 \\
 \midrule
-Total              &           &                                                   & 25 \\
+Total         &          &                                      & 25 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -183,7 +190,7 @@ S(t) = \alpha \cdot \frac{|r(t)|}{\text{MAD}} + (1 - \alpha) \cdot \tilde{p}(t)
 \end{equation}
 where MAD is the median absolute deviation of the residuals (robust scale estimate) and $\tilde{p}(t)$ is the proximity score scaled to the 90th percentile of the magnitude scores for comparability. The parameter $\alpha \in [0,1]$ controls the trade-off: $\alpha=1$ yields pure STL+IQR (residual magnitude only), while $\alpha=0$ uses change point proximity only. Points with $S(t) > Q3 + 1.5 \times IQR$ are flagged as anomalies.
 
-We conduct a full $\alpha$ ablation over $\{0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0\}$, each evaluated on 90 experimental configurations per dataset.
+We conduct a full $\alpha$ ablation over $\{0.0,\allowbreak 0.1,\allowbreak 0.3,\allowbreak 0.5,\allowbreak 0.7,\allowbreak 0.9,\allowbreak 1.0\}$, each evaluated on 90 experimental configurations per dataset.
 
 \subsection{Evaluation Protocol}
 
@@ -245,10 +252,11 @@ The real-event evaluation reveals a dramatically different ranking compared to s
 \centering
 \caption{Real-event detection summary over 25 PIHPS event--commodity pairs.}
 \label{tab:real}
-\small
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccc}
 \toprule
-Method & Detections & Avg. Density & Avg. Delay (days) & Lift \\
+Method & Detections & Density & Delay (d) & Lift \\
 \midrule
 STL+IQR          & \textbf{21/25 (84\%)} & 0.537 & 11.8 & 4.45$\times$ \\
 STL-PELT ($\alpha$=0.7) & 12/25 (48\%) & 0.339 & 31.6 & \textbf{5.64$\times$} \\
@@ -398,6 +406,7 @@ The authors thank the anonymous reviewers for their constructive feedback. This 
 % REFERENCES
 % ============================================================
 \begin{thebibliography}{99}
+\RaggedRight
 
 \bibitem{cleveland1990stl}
 R.~B. Cleveland, W.~S. Cleveland, J.~E. McRae, and I.~Terpenning, ``STL: A seasonal-trend decomposition procedure based on loess,'' \textit{J. Official Statist.}, vol.~6, no.~1, pp.~3--73, 1990.
